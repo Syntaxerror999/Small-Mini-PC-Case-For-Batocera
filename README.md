@@ -15,7 +15,7 @@
 
  Press F1 in Batocera to bring up PCmanFM.
  Navigate to where you have the script files saved to.
- At the top, click Tools . Open current folder in Terminal or press F4.
+ At the top, click Tools - Open current folder in Terminal or press F4.
  Mark all the script files as executable with chmod +x {filename)
  
     chmod +x elecrow.py
