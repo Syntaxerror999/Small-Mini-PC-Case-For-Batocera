@@ -18,10 +18,10 @@
  At the top, click Tools . Open current folder in Terminal or press F4.
  Mark all the script files as executable with chmod +x {filename)
  
-    elecrow.py
-    elecrow_mini_pc
-    get_game.sh
-    get_system.sh
+    chmod +x elecrow.py
+    chmod +x elecrow_mini_pc
+    chmod +x get_game.sh
+    chmod +x get_system.sh
 
 Next, move the scripts to their respective directories
 
