@@ -35,7 +35,13 @@ The last two will need their locations created first...
     mv get_game.sh /userdata/system/configs/emulationstation/scripts/game-start/
     mv get_system.sh /userdata/system/scripts
 
-Navigate to /media/bootfs/ and edit config.txt. add the following line to the bottom...
+Navigate to /boot and in the terminal, type
+
+    mount o- remount,rw /boot
+
+(folder will revert to write only on reboot)
+    
+Edit config.txt. add the following line to the bottom...
 
     dtoverlay=i2c0
 
