@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# Gets games name and sets the UPDATE flag in the scratch pad
-game="${3}"
+# Gets game's name and sends to the scratch pad
 
-sed -i "s|^\(NAME[[:blank:]]*=[[:blank:]]*\).*|\1$game|" /tmp/elecrow.scratch
-sed -i "s|^\(UPDATE[[:blank:]]*=[[:blank:]]*\).*|\11|" /tmp/elecrow.scratch
+game="${3}" #EmulationStation arg to get current game's name
+
+#Write game name to the scratch pad
+sed -i "s|^\(NAME[[:blank:]]*=[[:blank:]]*\).*|\1${game//&/\\&}|" /tmp/elecrow.scratch
+
 

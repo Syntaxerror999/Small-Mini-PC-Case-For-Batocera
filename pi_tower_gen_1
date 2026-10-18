@@ -1,0 +1,25 @@
+#!/bin/bash
+
+run_install() {
+    #code goes here
+    xterm -e echo"hello world"
+}
+
+run_install
+case "$1" in
+    start)
+	    python3 /userdata/system/elecrow.py &
+		;;
+	stop)
+		killall python3 /userdata/system/elecrow.py &
+        if [ -f /tmp/reboot.please ]; then
+            i2ctransfer -y 0 w3@0x2d 0x00 0xff 0xff #bash version of sending the clear screen trigger
+            sleep 0.1
+        elif [ -f /tmp/shutdown.please ]; then
+            sleep 1
+            i2ctransfer -y 0 w3@0x2d 0x00 0xff 0xff #bash version of sending the clear screen trigger
+            sleep 0.1
+            i2ctransfer -y 0 w3@0x2d 0x00 0xff 0xfe #bash version of sending the shutdown trigger
+        fi
+        ;;
+esac

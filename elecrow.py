@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-#Version 2.0 Batocera service For Elecrow Small-Mini-PC case Gen 1
-#Adaptation of origional Pi OS script
+#Batocera service For Elecrow PiTower Gen 1
+#Adaptation of origional PiOS script from Elecrow
+#VERSION=2.2
 import psutil
 import time
 import smbus
 import os
 import sys
 from pathlib import Path
-
-dt_format = 1      # date/time format used. 1 mm/dd/yyyy am/pm | 0 yyyy/mm/dd 24h
 
 class RPiSystemMonitor:
     def __init__(self):
@@ -94,6 +93,22 @@ class RPiSystemMonitor:
             print(f"Storage info error: {e}")
             return None
 
+    def get_system_language(self):
+        default_lang = "en_US"
+        config_path = "/userdata/system/batocera.conf"
+        try:
+            with open(config_path) as f:
+                for line in f:
+                    if line.startswith("#system.language="):
+                        return default_lang
+                    elif line.startswith("system.language="):
+                        return line.split("=")[1].strip()
+
+        except Exception as e:
+            print(f"get system language error: {e}")
+            return None
+
+
     def send_to_oled(self, x, y, message):
         """Send data to OLED display"""
         try:
@@ -132,7 +147,7 @@ class RPiSystemMonitor:
                 message_index += 1
                 #wrap around logic.
                 # If current positionion is near the edge, wrap around to the next row
-                if x >= 100:
+                if x >= 103:
                     x = 0
                     y += 1
                 else:
@@ -178,7 +193,7 @@ class RPiSystemMonitor:
             print(f"Send type big error: {e}")
 
     def send_pan_to_oled(self, x, y, message):
-        """Send data to OLED thats longer than 14 characters. Pans and then resets to beginning"""
+        """Send data to OLED thats longer than 19 characters. Pans and then resets to beginning"""
         # NOTE : Make this your last send command as it will hold up everything else
         try:
             # Count message length
@@ -210,7 +225,7 @@ class RPiSystemMonitor:
             print(f"Send pan error: {e}")
 
     def send_pan_big_to_oled(self, x, y, message):
-        """Send data to OLED thats longer than 19 characters. Pans and then resets to beginning"""
+        """Send data to OLED thats longer than 14 characters. Pans and then resets to beginning"""
         # NOTE : Make this your last send command as it will hold up everything else
         try:
             # Count message length
@@ -393,9 +408,7 @@ class RPiSystemMonitor:
             self.bus.write_i2c_block_data(self.i2c_address, 0x00, [0xFF, 0xFF])
             time.sleep(1.0)  # Wait a bit to ensure the signal is sent
             self.send_type_big_to_oled(24, 0, f"THE ONLY")
-            time.sleep(0.1)
             self.send_type_big_to_oled(0, 2, f" WINNING MOVE")
-            time.sleep(0.1)
             self.send_type_big_to_oled(0, 4, f"IS NOT TO PLAY")
             time.sleep(2.0)
             self.bus.write_i2c_block_data(self.i2c_address, 0x00, [0xFF, 0xFF]) #clears screen
@@ -411,21 +424,6 @@ class RPiSystemMonitor:
 
         except Exception as e:
             print(f"System shutdown error: {e}")
-
-    def check_outside_shutdown(self):
-        """check if menu shutdown was used and halt the script to avoid ugly glitches on the screen"""
-        try:
-            # Check for outside shutdown/reboots
-            shutdown_file = Path("/tmp/shutdown.please/")
-            if shutdown_file.is_file():
-                self.bus.write_i2c_block_data(self.i2c_address, 0x00, [0xFF, 0xFF])
-                time.sleep(0.1)  # Wait a bit to ensure the signal is sent
-                return True
-            else:
-                return False
-
-        except Exception as e:
-            print(f"Outside shutdown error: {e}")
 
 
     def write_scratch(self, x, y):
@@ -461,49 +459,47 @@ class RPiSystemMonitor:
 
 
 
-###
+#####################################################################
+
 
     def run(self):
         """Main running loop"""
+
+        #One time intro
+        self.bus.write_i2c_block_data(self.i2c_address, 0x00, [0xFF, 0xFF])
+        self.send_big_to_oled(0, 0, f"BATOCERA".center(14))
+        time.sleep(1.0)
+        self.send_type_to_oled(50, 3, f"The")
+        self.send_type_to_oled(22, 4, f"Retro Gaming")
+        self.send_type_to_oled(8, 5, f"Operating System")
         
-        display_cycle = 2  # Track current display content (set to what screen you want to start)
-        cycle_reset = 5 # sets when display_cycle resets to zero (AKA number of screens)
+        region = self.get_system_language()
+        display_cycle = 4  # Track current display content (set to what screen you want to start on)
+        cycle_reset = 5 # sets when display_cycle resets to zero (set to number of screens being used)
         cycle_start_time = time.time()  # Record current cycle start time
+        game_lockout = 0
+        temp_lockout = 0
         empty_line = " ".ljust(19)  # Empty line for clearing unused lines
+
 
         #create scratch file for Batocera features
         es_name = "null"
         es_system = "null"
 
         if os.path.exists("/tmp/elecrow.scratch"):
-            os.remove("/tmp/elecrow.scratch")
+            os.remove("/tmp/elecrow.scratch") #Delete old copy 
         with open("/tmp/elecrow.scratch", "a", encoding="utf-8") as file:
             file.write("NAME=null\n")
             file.write("SYSTEM=null\n")
+            file.write(f"REGION={region}\n")
             file.write("UPDATE=0\n")
-
-
-        #One time intro
-        self.bus.write_i2c_block_data(self.i2c_address, 0x00, [0xFF, 0xFF])
-        time.sleep(0.1)
-        self.send_type_big_to_oled(6, 1, f"SHALL WE PLAY")
-        time.sleep(0.1)
-        self.send_type_big_to_oled(28, 3, f"A GAME?")
-        time.sleep(3.0)
-        self.bus.write_i2c_block_data(self.i2c_address, 0x00, [0xFF, 0xFF])
-        time.sleep(0.1)
-
-
-
+            
         while True:
             try:
                 # Check shutdown signal first
                 if self.check_shutdown_signal():
                     self.system_shutdown()
                     break  # Exit the loop after initiating shutdown
-                #no longer needed.
-                #if self.check_outside_shutdown():
-                    #break
 
                 # Send NVME status first
                 self.send_nvme_status()
@@ -515,7 +511,6 @@ class RPiSystemMonitor:
                         cycle_start_time = current_time
                         display_cycle = (display_cycle + 1) % cycle_reset # Advance display_cycle, reset to 0 at cycle_reset
                         if display_cycle != 0:
-                            #self.check_outside_shutdown()                  
                             self.clear_screen()
                 else:
                     # remaining cycles show for 5 seconds
@@ -524,6 +519,7 @@ class RPiSystemMonitor:
                         display_cycle = (display_cycle + 1) % cycle_reset # Advance display_cycle, reset to 0 at cycle_reset
                         if display_cycle != 0:
                             self.clear_screen()
+
 
                 if display_cycle == 0:
                     # Display CPU and memory information screen
@@ -543,6 +539,7 @@ class RPiSystemMonitor:
                 elif display_cycle == 1:
                     # Display storage information screen
                     storage_info = self.get_storage_info()
+                    temp_lockout = 0 # For next screen
                     if storage_info:
                         if storage_info['is_root_nvme']:
                             nvme_msg = f"NVME:{storage_info['root_used_percent']:.1f}% => {storage_info['root_total_gb']}G".ljust(19)
@@ -563,16 +560,30 @@ class RPiSystemMonitor:
                 elif display_cycle == 2:
                     # Display temperature information screen
                     temperature = self.get_temperature()
+                    #temperature = 85 #for testing
                     temp_msg = f"TEMP: {temperature:.1f}C".center(14)  # Center align for big font display
-
-                    self.send_big_to_oled(0, 2, temp_msg)  # Display in the middle of the screen
+                    self.send_big_to_oled(0, 1, temp_msg)  # Display in the middle of the screen
+                    self.send_progress_to_oled(3, int(temperature))
+                    if temp_lockout == 0:
+                        temp_lockout = 1
+                        #self.send_to_oled(55, 4, f"|") #50c
+                        self.send_to_oled(66, 4, f"^") #60c - fan on/low
+                        self.send_to_oled(66, 5, f"L")
+                        self.send_to_oled(74, 4, f"^") #67.5 - fan med
+                        self.send_to_oled(74, 5, f"M")                   
+                        self.send_to_oled(83, 4, f"^") #75 - fan high
+                        self.send_to_oled(83, 5, f"H")                    
+                        self.send_to_oled(89, 4, f"^") #80 - CPU throttle
+                        self.send_to_oled(89, 5, f"**")                        
+                        self.send_to_oled(94, 4, f"^") #85 - CPU max throttle
 
                 elif display_cycle == 3:
                     # Display system time screen
                     current_datetime = time.localtime()
-                    lockout = 0 #this is for the next screen
 
-                    if dt_format == 1:
+                    game_lockout = 0 #this is for the next screen
+
+                    if region == "en_US":
                         #US format
                         date_msg = time.strftime("  %h %d %Y", current_datetime).ljust(14)
                         time_msg = time.strftime("   %I:%M %p", current_datetime).ljust(14)
@@ -587,30 +598,35 @@ class RPiSystemMonitor:
                 else:  # display_cycle == 4
                     # Display user custom pannel
                     #check for update to scratch file
-                    if self.read_scratch("UPDATE") == "1" :
-                        es_name = self.read_scratch("NAME")
-                        es_system = self.read_scratch("SYSTEM")
-                        self.write_scratch("UPDATE", "0")
+                    if game_lockout == 0:
+                        if self.read_scratch("UPDATE") == "1":
+                            es_name = self.read_scratch("NAME")
+                            es_system = self.read_scratch("SYSTEM")
+                            self.write_scratch("UPDATE", "0")
 
-                    if es_name == "null":
-                        lockout = 1 # for stopping a glitch with the now playing screen
-                        self.send_type_big_to_oled(24, 0, f"HOW ABOUT")
-                        time.sleep(0.1)
-                        self.send_type_big_to_oled(16, 2, f"A NICE GAME")
-                        time.sleep(0.1)
-                        self.send_type_big_to_oled(24, 4, f"OF CHESS?")
-                        time.sleep(0.1)
-                        
-                    elif lockout == 0:
-                        system_centered = es_system.center(14)
+                    if es_name == "null" or "":
+                        game_lockout = 1
+                        self.send_big_to_oled(0, 0, f"BATOCERA".center(14))
+                        self.send_to_oled(50, 3, f"The")
+                        self.send_to_oled(22, 4, f"Retro Gaming")
+                        self.send_to_oled(8, 5, f"Operating System")
+
+                    else:
+                        game_lockout = 1
+                        sys_length = len(es_system)
+
+                        if sys_length <= 14:
+                            system_centered = es_system.center(14)
+                        else:
+                            system_centered = es_system.center(19)
+
                         self.send_to_oled(20, 0, f"NOW PLAYING")
-                        time.sleep(0.1)
                         self.send_to_oled(35, 3, f"SYSTEM")
-                        time.sleep(0.1)
-                        self.send_big_to_oled(0, 4, system_centered)
-                        time.sleep(0.1)
+                        if sys_length <= 14: 
+                            self.send_big_to_oled(0, 4, system_centered)
+                        else:
+                            self.send_to_oled(0, 5, system_centered)
                         self.send_scroll_big_to_oled(0, 1, es_name)
-                        time.sleep(0.1)
                         
 
                 # Update interval
