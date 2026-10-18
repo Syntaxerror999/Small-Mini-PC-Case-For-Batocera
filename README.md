@@ -11,6 +11,12 @@
  look for a file /tmp/shutdown.please . While shutting down via the menu or my script will do this, shutting 
  down via command line will not.
 
+UPDATE 2.2
+- Renamed service script file in case someone else ports the Pi Tower gen 2 script (or someone buys me one to do it)
+- names of systems on Now playing screen get parsed into something more human readable
+- elecrow.py now looks at your batocera.conf file for system_language and adjusts the clock accordingly if its en_US or defalt (not set in config)
+- if language is en_US or default, systems like the Mega Drive will be Genesis on the now playing screen
+
  Installation instructions.
 
  Press F1 in Batocera to bring up PCmanFM.
@@ -19,14 +25,14 @@
  Mark all the script files as executable with chmod +x {filename)
  
     chmod +x elecrow.py
-    chmod +x elecrow_mini_pc
+    chmod +x pi_tower_gen_1
     chmod +x get_game.sh
     chmod +x get_system.sh
 
 Next, move the scripts to their respective directories
 
     mv elecrow.py /userdata/system/ 
-    mv elecrow_mini_pc /userdata/system/services/
+    mv pi_tower_gen_1 /userdata/system/services/
 
 The last two will need their locations created first...
 
@@ -47,7 +53,9 @@ Edit config.txt. add the following line to the bottom...
 
 CLose out everything, return to the Batocera menu. Pull up the Main menu and navigate to
 System settings - Services
-turn on "Elecrow_Mini_PC"
+turn on "pi_tower_gen_1"
+
+reboot system
 
 
  
