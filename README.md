@@ -16,6 +16,7 @@ UPDATE 2.2
 - names of systems on Now playing screen get parsed into something more human readable
 - elecrow.py now looks at your batocera.conf file for system_language and adjusts the clock accordingly if its en_US or defalt (not set in config)
 - if language is en_US or default, systems like the Mega Drive will be Genesis on the now playing screen
+- new more Batocera themed startup screen and screen when no game is being played. (don't worry, I left the shutdown message)
 
  Installation instructions.
 
